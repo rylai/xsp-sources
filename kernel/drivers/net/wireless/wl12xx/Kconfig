@@ -52,5 +52,5 @@ config WL1271
 	  unsure.
 
 config WL12XX_PLATFORM_DATA
-       bool
-       default y
+	bool
+	default y

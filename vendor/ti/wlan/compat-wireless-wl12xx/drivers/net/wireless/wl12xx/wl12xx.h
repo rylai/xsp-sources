@@ -3,6 +3,7 @@
  *
  * Copyright (C) 1998-2009 Texas Instruments. All rights reserved.
  * Copyright (C) 2008-2009 Nokia Corporation
+ * Copyright (C) 2012 Sony Mobile Communications AB
  *
  * Contact: Luciano Coelho <luciano.coelho@nokia.com>
  *
@@ -339,6 +340,8 @@ struct wl1271_if_operations {
 	struct device* (*dev)(struct wl1271 *wl);
 	void (*enable_irq)(struct wl1271 *wl);
 	void (*disable_irq)(struct wl1271 *wl);
+	void (*enable_wkup)(struct wl1271 *wl);
+	void (*disable_wkup)(struct wl1271 *wl);
 	void (*set_block_size) (struct wl1271 *wl, unsigned int blksz);
 };
 
@@ -734,6 +737,7 @@ struct wl1271 {
 
 struct wl1271_station {
 	bool added;
+	bool authorized;
 	u8 hlid;
 };
 

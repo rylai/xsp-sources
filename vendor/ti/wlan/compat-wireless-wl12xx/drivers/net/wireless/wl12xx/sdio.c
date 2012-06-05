@@ -2,6 +2,7 @@
  * This file is part of wl1271
  *
  * Copyright (C) 2009-2010 Nokia Corporation
+ * Copyright (C) 2012 Sony Mobile Communications AB
  *
  * Contact: Luciano Coelho <luciano.coelho@nokia.com>
  *
@@ -102,6 +103,41 @@ static irqreturn_t wl1271_hardirq(int irq, void *cookie)
 	spin_unlock_irqrestore(&wl->wl_lock, flags);
 
 	return IRQ_WAKE_THREAD;
+}
+
+static void wl1271_sdio_disable_irq_wake(struct wl1271 *wl)
+{
+	if (wl->irq_wake_enabled) {
+		device_init_wakeup(wl1271_sdio_wl_to_dev(wl), 0);
+		disable_irq_wake(wl->irq);
+	}
+}
+
+static void wl1271_sdio_enable_irq_wake(struct wl1271 *wl)
+{
+	int ret;
+	mmc_pm_flag_t mmcflags;
+	struct ieee80211_hw *hw = wl->hw;
+	struct sdio_func *func = wl_to_func(wl);
+
+	ret = enable_irq_wake(wl->irq);
+	if (!ret) {
+		wl->irq_wake_enabled = true;
+		device_init_wakeup(wl1271_sdio_wl_to_dev(wl), 1);
+
+		/* if sdio can keep power while host is suspended, enable wow */
+		mmcflags = sdio_get_host_pm_caps(func);
+		wl1271_debug(DEBUG_SDIO, "sdio PM caps = 0x%x", mmcflags);
+
+		if (mmcflags & MMC_PM_KEEP_POWER) {
+			hw->wiphy->wowlan.flags = WIPHY_WOWLAN_ANY;
+			hw->wiphy->wowlan.n_patterns =
+					WL1271_MAX_RX_DATA_FILTERS;
+			hw->wiphy->wowlan.pattern_min_len = 1;
+			hw->wiphy->wowlan.pattern_max_len =
+					WL1271_RX_DATA_FILTER_MAX_PATTERN_SIZE;
+		}
+	}
 }
 
 static void wl1271_sdio_disable_interrupts(struct wl1271 *wl)
@@ -223,6 +259,8 @@ static struct wl1271_if_operations sdio_ops = {
 	.dev		= wl1271_sdio_wl_to_dev,
 	.enable_irq	= wl1271_sdio_enable_interrupts,
 	.disable_irq	= wl1271_sdio_disable_interrupts,
+	.enable_wkup	= wl1271_sdio_enable_irq_wake,
+	.disable_wkup	= wl1271_sdio_disable_irq_wake,
 	.set_block_size = wl1271_sdio_set_block_size,
 };
 
@@ -233,7 +271,6 @@ static int __devinit wl1271_probe(struct sdio_func *func,
 	const struct wl12xx_platform_data *wlan_data;
 	struct wl1271 *wl;
 	unsigned long irqflags;
-	mmc_pm_flag_t mmcflags;
 	int ret;
 
 	/* We are only able to handle the wlan function */
@@ -282,24 +319,6 @@ static int __devinit wl1271_probe(struct sdio_func *func,
 		goto out_free;
 	}
 
-	ret = enable_irq_wake(wl->irq);
-	if (!ret) {
-		wl->irq_wake_enabled = true;
-		device_init_wakeup(wl1271_sdio_wl_to_dev(wl), 1);
-
-		/* if sdio can keep power while host is suspended, enable wow */
-		mmcflags = sdio_get_host_pm_caps(func);
-		wl1271_debug(DEBUG_SDIO, "sdio PM caps = 0x%x", mmcflags);
-
-		if (mmcflags & MMC_PM_KEEP_POWER) {
-			hw->wiphy->wowlan.flags = WIPHY_WOWLAN_ANY;
-			hw->wiphy->wowlan.n_patterns =
-					WL1271_MAX_RX_DATA_FILTERS;
-			hw->wiphy->wowlan.pattern_min_len = 1;
-			hw->wiphy->wowlan.pattern_max_len =
-					WL1271_RX_DATA_FILTER_MAX_PATTERN_SIZE;
-		}
-	}
 	disable_irq(wl->irq);
 
 	sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
@@ -341,10 +360,6 @@ static void __devexit wl1271_remove(struct sdio_func *func)
 	host->pm_flags = host->pm_flags & ~MMC_PM_KEEP_POWER;
 
 	wl1271_unregister_hw(wl);
-	if (wl->irq_wake_enabled) {
-		device_init_wakeup(wl1271_sdio_wl_to_dev(wl), 0);
-		disable_irq_wake(wl->irq);
-	}
 	free_irq(wl->irq, wl);
 	wl1271_free_hw(wl);
 }
