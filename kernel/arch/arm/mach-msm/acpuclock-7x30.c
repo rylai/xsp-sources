@@ -102,7 +102,6 @@ static struct cpufreq_frequency_table freq_table[] = {
 	{ 19, 1900800 },
 	{ 20, 2016000 },
 	{ 21, CPUFREQ_TABLE_END },
-#endif
 };
 
 /* Use negative numbers for sources that can't be enabled/disabled */
@@ -139,7 +138,6 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 1900800, PLL_2,   3, 0,  UINT_MAX, 1475, VDD_RAW(1475) },
 	{ 2016000, PLL_2,   3, 0,  UINT_MAX, 1475, VDD_RAW(1475) },
 	{ 0 }
-#endif
 };
 
 #define POWER_COLLAPSE_KHZ MAX_AXI_KHZ
