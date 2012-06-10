@@ -56,7 +56,6 @@
 #define MAX_AXI_KHZ 192000
 #define SEMC_ACPU_MIN_UV_MV 750U
 #define SEMC_ACPU_MAX_UV_MV 1525U
-#define OVERCLOCK_CPU_LOW 0 /* set to 0 to enable 2.0 GHz */
 
 struct clock_state {
 	struct clkctl_acpu_speed	*current_speed;
@@ -80,10 +79,10 @@ struct clkctl_acpu_speed {
 static struct clock_state drv_state = { 0 };
 
 static struct cpufreq_frequency_table freq_table[] = {
-	{ 0, 134400 },
+	{ 0, 122880 },
 	{ 1, 184320 },
-	{ 2, 249600 },
-	{ 3, 364800 },
+	{ 2, 245760 },
+	{ 3, 368640 },
 	{ 4, 460800 },
 	{ 5, 576000 },
 	{ 6, 652800 },
@@ -91,16 +90,13 @@ static struct cpufreq_frequency_table freq_table[] = {
 	/* 806.4MHz is updated to 1024MHz at runtime for MSM8x55. */
 	{ 8, 806400 },
 	{ 9, 921600 },
-	{ 10, 1017600 },
-	{ 11, 1113600 },
-	{ 12, 1209600 },
+	{ 10, 1024000 },
+	{ 11, 1113000 },
+	{ 12, 1200000 },
 	{ 13, 1305600 },
 	{ 14, 1401600 },
 	{ 15, 1516800 },
 	{ 16, 1612800 },
-#if OVERCLOCK_CPU_LOW
-	{ 17, CPUFREQ_TABLE_END },
-#else
 	{ 17, 1708800 },
 	{ 18, 1804800 },
 	{ 19, 1900800 },
@@ -121,36 +117,27 @@ static struct cpufreq_frequency_table freq_table[] = {
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 //	{ 24576,  SRC_LPXO, 0, 0,  30720000,  900, VDD_RAW(900) },
 //	{ 61440,  PLL_3,    5, 11, 61440000,  900, VDD_RAW(900) },
-	{ 134400, PLL_3,    5, 5,  61440000,  900, VDD_RAW(900) },
+	{ 122880, PLL_3,    5, 5,  61440000,  900, VDD_RAW(900) },
 	{ 184320, PLL_3,    5, 4,  61440000,  900, VDD_RAW(900) },
-	{ MAX_AXI_KHZ, SRC_AXI, 1, 0, 61440000, 900, VDD_RAW(900) },
-	{ 249600, PLL_3,    5, 2,  61440000,  900, VDD_RAW(900) },
-	{ 364800, PLL_3,    5, 1,  122800000, 900, VDD_RAW(900) },
-	/* AXI has MSMC1 implications. See above. */
+	{ 245760, PLL_3,    5, 2,  61440000,  900, VDD_RAW(900) },
+	{ 368640, PLL_3,    5, 1,  122800000, 900, VDD_RAW(900) },
 	{ 460800, PLL_1,    2, 0,  153600000, 950, VDD_RAW(950) },
 	{ 576000, PLL_1,    2, 0,  153600000, 1000, VDD_RAW(1000) },
 	{ 652800, PLL_1,    2, 0,  153600000, 1050, VDD_RAW(1050) },
 	{ 768000, PLL_1,    2, 0,  153600000, 1050, VDD_RAW(1050) },
-	/*
-	 * AXI has MSMC1 implications. See above.
-	 * 806.4MHz is increased to match the SoC's capabilities at runtime
-	 */
 	{ 806400, PLL_2,    3, 0,  UINT_MAX, 1100, VDD_RAW(1100) },
 	{ 921600, PLL_2,    3, 0,  UINT_MAX, 1150, VDD_RAW(1150) },
-	{ 1017600, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
-	{ 1113600, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
-	{ 1209600, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
+	{ 1024000, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
+	{ 1113000, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
+	{ 1200000, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
 	{ 1305600, PLL_2,   3, 0,  UINT_MAX, 1250, VDD_RAW(1250) },
 	{ 1401600, PLL_2,   3, 0,  UINT_MAX, 1250, VDD_RAW(1250) },
 	{ 1516800, PLL_2,   3, 0,  UINT_MAX, 1300, VDD_RAW(1300) },
 	{ 1612800, PLL_2,   3, 0,  UINT_MAX, 1300, VDD_RAW(1300) },
-#if OVERCLOCK_CPU_LOW
-	{ 0 }
-#else
 	{ 1708800, PLL_2,   3, 0,  UINT_MAX, 1350, VDD_RAW(1350) },
-	{ 1804800, PLL_2,   3, 0,  UINT_MAX, 1400, VDD_RAW(1400) },
-	{ 1900800, PLL_2,   3, 0,  UINT_MAX, 1450, VDD_RAW(1450) },
-	{ 2016000, PLL_2,   3, 0,  UINT_MAX, 1500, VDD_RAW(1500) },
+	{ 1804800, PLL_2,   3, 0,  UINT_MAX, 1350, VDD_RAW(1350) },
+	{ 1900800, PLL_2,   3, 0,  UINT_MAX, 1475, VDD_RAW(1475) },
+	{ 2016000, PLL_2,   3, 0,  UINT_MAX, 1475, VDD_RAW(1475) },
 	{ 0 }
 #endif
 };
